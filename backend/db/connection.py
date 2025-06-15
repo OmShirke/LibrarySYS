@@ -1,40 +1,73 @@
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
+from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import ConnectionFailure
+import os
+from dotenv import load_dotenv
+import logging
 
-# SQLite database
-SQLALCHEMY_DATABASE_URL = "sqlite:///./library.db"
+load_dotenv()
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+class DatabaseConnection:
+    client: AsyncIOMotorClient = None
+    database = None
 
-Base = declarative_base()
+MONGODB_URL = os.getenv("MONGODB_URL")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "library_db")
 
-# Book table model
-class BookDB(Base):
-    __tablename__ = "books"
-
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    author = Column(String, index=True)
-    isbn = Column(String, unique=True, index=True)
-    publication_year = Column(Integer)
-    genre = Column(String)
-    available = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-# Create tables
-Base.metadata.create_all(bind=engine)
-
-# Dependency to get database session
-def get_db():
-    db = SessionLocal()
+async def connect_to_mongo():
     try:
-        yield db
-    finally:
-        db.close()
+        DatabaseConnection.client = AsyncIOMotorClient(MONGODB_URL)
+        DatabaseConnection.database = DatabaseConnection.client[DATABASE_NAME]
+        
+        # Test the connection
+        await DatabaseConnection.client.admin.command('ping')
+        logger.info(f"Successfully connected to MongoDB at {MONGODB_URL}")
+        
+        # Create indexes for better performance
+        await create_indexes()
+        
+    except ConnectionFailure as e:
+        logger.error(f"Failed to connect to MongoDB: {e}")
+        raise e
+    except Exception as e:
+        logger.error(f"Unexpected error connecting to MongoDB: {e}")
+        raise e
+
+async def create_indexes():
+    """Create database indexes for better performance"""
+    try:
+        books_collection = get_collection("books")
+        
+        # Create indexes
+        await books_collection.create_index("title")
+        await books_collection.create_index("author")
+        await books_collection.create_index("isbn", unique=True)
+        await books_collection.create_index("genre")
+        await books_collection.create_index("available")
+        await books_collection.create_index([("title", "text"), ("author", "text")])
+        
+        logger.info("Database indexes created successfully")
+    except Exception as e:
+        logger.warning(f"Failed to create indexes: {e}")
+
+def get_database():
+    """Get database instance"""
+    if DatabaseConnection.database is None:
+        raise RuntimeError("Database not connected. Call connect_to_mongo() first.")
+    return DatabaseConnection.database
+
+def get_collection(collection_name: str):
+    """Get collection instance"""
+    if DatabaseConnection.database is None:
+        raise RuntimeError("Database not connected. Call connect_to_mongo() first.")
+    return DatabaseConnection.database[collection_name]
+
+async def check_database_health():
+    """Check if database connection is healthy"""
+    try:
+        await DatabaseConnection.client.admin.command('ping')
+        return True
+    except Exception:
+        return False
