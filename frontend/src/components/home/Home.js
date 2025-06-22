@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import "./Home.css";
 
-const Home = () => {
+const Home = ({ currentUser, token, isLoggedIn }) => { // Add these props
     const [books, setBooks] = useState([]);
     const [selectedBook, setSelectedBook] = useState(null);
     const [error, setError] = useState('');
@@ -15,6 +15,7 @@ const Home = () => {
     const [imageUploading, setImageUploading] = useState(false);
     const [shouldRemoveImage, setShouldRemoveImage] = useState(false);
 
+
     const [bookForm, setBookForm] = useState({
         title: '',
         author: '',
@@ -25,20 +26,53 @@ const Home = () => {
         available: false,
     });
 
+    // Helper function to get headers with authentication
+    const getAuthHeaders = () => {
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+        
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        return headers;
+    };
+
+    // Helper function for form data headers 
+    const getAuthFormHeaders = () => {
+        const headers = {};
+        
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        return headers;
+    };
+
     useEffect(() => {
-        fetchBooks();
-    }, []);
+        if (isLoggedIn) {
+            fetchBooks();
+        }
+    }, [isLoggedIn, token]); // Add token to dependency array
 
     const fetchBooks = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:8000/books/`);
+            const response = await fetch(`http://localhost:8000/books/`, {
+                method: 'GET',
+                headers: getAuthHeaders(), // Add authentication headers
+            });
+            
             if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Authentication required');
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
             
-            // Handle pagination response structure
+            // Handle pagination response structure 
             if (data.books && Array.isArray(data.books)) {
                 setBooks(data.books);
             } else if (Array.isArray(data)) {
@@ -49,21 +83,26 @@ const Home = () => {
             setError('');
         } catch (err) {
             console.error('Error fetching books:', err);
-            setError('Failed to get books');
+            if (err.message === 'Authentication required') {
+                setError('Please log in to view books');
+            } else {
+                setError('Failed to get books');
+            }
             setBooks([]);
         }
         setLoading(false);
     };
 
-    // Upload image to Cloudinary
+    // Upload image to Cloudinary - Updated with auth headers
     const uploadImageToCloudinary = async (imageFile) => {
         try {
             setImageUploading(true);
             const formData = new FormData();
             formData.append('file', imageFile);
 
-            const response = await fetch(`http://localhost:8000/upload-image/`, {
+            const response = await fetch(`http://localhost:8000/books/upload-image/`, {
                 method: 'POST',
+                headers: getAuthFormHeaders(), // Add authentication headers
                 body: formData,
             });
 
@@ -75,7 +114,11 @@ const Home = () => {
                 return { image_url: data.image_url, public_id: data.image_public_id };
             } else {
                 const errorData = await response.json();
-                setError(errorData.detail || 'Failed to upload image');
+                if (response.status === 401) {
+                    setError('Authentication required');
+                } else {
+                    setError(errorData.detail || 'Failed to upload image');
+                }
                 return null;
             }
         } catch (err) {
@@ -87,16 +130,14 @@ const Home = () => {
         }
     };
 
-    // Delete image from Cloudinary
+    // Delete image from Cloudinary - Updated with auth headers
     const deleteImageFromCloudinary = async (publicId) => {
         if (!publicId) return;
         
         try {
-            const response = await fetch(`http://localhost:8000/delete-image/`, {
+            const response = await fetch(`http://localhost:8000/books/delete-image/`, {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(), // Add authentication headers
                 body: JSON.stringify({ public_id: publicId }),
             });
 
@@ -126,9 +167,7 @@ const Home = () => {
 
             const response = await fetch(`http://localhost:8000/books/`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(), // Add authentication headers
                 body: JSON.stringify(bookPayload),
             });
 
@@ -140,8 +179,9 @@ const Home = () => {
                 const errorData = await response.json();
                 console.error('Server error:', errorData);
                 
-                // Handle validation errors properly
-                if (errorData.detail && Array.isArray(errorData.detail)) {
+                if (response.status === 401) {
+                    setError('Authentication required');
+                } else if (errorData.detail && Array.isArray(errorData.detail)) {
                     const errorMessages = errorData.detail.map(err => `${err.loc?.join('.')}: ${err.msg}`).join(', ');
                     setError(`Validation errors: ${errorMessages}`);
                 } else {
@@ -183,9 +223,7 @@ const Home = () => {
 
             const response = await fetch(`http://localhost:8000/books/${id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(), // Add authentication headers
                 body: JSON.stringify(bookPayload),
             });
 
@@ -197,8 +235,9 @@ const Home = () => {
                 const errorData = await response.json();
                 console.error('Server error:', errorData);
                 
-                // Handle validation errors properly
-                if (errorData.detail && Array.isArray(errorData.detail)) {
+                if (response.status === 401) {
+                    setError('Authentication required');
+                } else if (errorData.detail && Array.isArray(errorData.detail)) {
                     const errorMessages = errorData.detail.map(err => `${err.loc?.join('.')}: ${err.msg}`).join(', ');
                     setError(`Validation errors: ${errorMessages}`);
                 } else {
@@ -216,6 +255,7 @@ const Home = () => {
         try {
             const response = await fetch(`http://localhost:8000/books/${id}`, {
                 method: 'DELETE',
+                headers: getAuthHeaders(), // Add authentication headers
             });
             if (response.ok) {
                 fetchBooks();
@@ -223,7 +263,11 @@ const Home = () => {
                 return true;
             } else {
                 const errorData = await response.json();
-                setError(errorData.detail || 'Failed to delete book');
+                if (response.status === 401) {
+                    setError('Authentication required');
+                } else {
+                    setError(errorData.detail || 'Failed to delete book');
+                }
             }
         } catch (err) {
             console.error('Error deleting book:', err);
@@ -232,6 +276,7 @@ const Home = () => {
         return false;
     };
 
+    // Rest of your existing functions remain the same...
     const handleAddClick = () => {
         setBookForm({
             title: '',
@@ -269,7 +314,6 @@ const Home = () => {
         setCurrentView('edit');
     };
 
-    // New function to handle book view (description display)
     const handleViewClick = (book) => {
         setSelectedBook(book);
         setCurrentView('view');
@@ -376,26 +420,18 @@ const Home = () => {
                 setError('Image file size should be less than 5MB');
                 return;
             }
-
             // If there's a previously uploaded image in this session, delete it
             if (uploadedImagePublicId) {
                 await deleteImageFromCloudinary(uploadedImagePublicId);
             }
-
-            // Reset remove flag since we're adding a new image
             setShouldRemoveImage(false);
-
             setImageFile(file);
-            
-            // Create preview
             const reader = new FileReader();
             reader.onload = (e) => {
                 setImagePreview(e.target.result);
             };
             reader.readAsDataURL(file);
             setError('');
-
-            // Upload new image to Cloudinary
             const uploadResult = await uploadImageToCloudinary(file);
             if (!uploadResult) {
                 // If upload failed, reset the image
@@ -410,14 +446,11 @@ const Home = () => {
     };
 
     const removeImage = async () => {
-        // If there's a newly uploaded image in this session, delete it from Cloudinary
         if (uploadedImagePublicId) {
             await deleteImageFromCloudinary(uploadedImagePublicId);
         }
-        
         // Set flag to indicate image should be removed when updating
         setShouldRemoveImage(true);
-        
         setImageFile(null);
         setImagePreview(null);
         setUploadedImageUrl(null);
@@ -435,10 +468,24 @@ const Home = () => {
         (book.genre || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Show authentication required message if not logged in
+    if (!isLoggedIn) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                        Authentication Required
+                    </h2>
+                    <p className="text-gray-600">
+                        Please log in to access the book management system.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="home-container">
-            <h1>Library Management System</h1>
-
             {error && <div className="error-message">{typeof error === 'string' ? error : JSON.stringify(error)}</div>}
             <div className="top-controls">
                 <input
@@ -454,8 +501,6 @@ const Home = () => {
                     </button>
                 )}
             </div>
-
-            {loading && <div className="loading">Loading books...</div>}
 
             {/* Book List View */}
             {currentView === 'list' && !loading && (

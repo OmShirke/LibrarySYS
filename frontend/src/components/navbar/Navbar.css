@@ -1,34 +1,11 @@
-/* App Component Styles */
-.loading-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.loading-spinner-large {
-    animation: spin 2s linear infinite;
-    border-radius: 50%;
-    height: 8rem;
-    width: 8rem;
-    border: 4px solid transparent;
-    border-bottom: 4px solid #4f46e5;
-}
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Navigation Bar Styles */
+/* Navbar Component Styles */
 .app-nav {
     background-color: white;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 .nav-container {
@@ -65,6 +42,7 @@
 .nav-welcome {
     font-size: 0.875rem;
     color: #374151;
+    font-weight: 500;
 }
 
 .nav-logout-button {
@@ -89,6 +67,24 @@
 }
 
 /* Responsive Design */
+@media (max-width: 768px) {
+    .nav-container {
+        padding: 0 0.5rem;
+    }
+    
+    .nav-title {
+        font-size: 1rem;
+    }
+    
+    .nav-welcome {
+        display: none;
+    }
+    
+    .nav-right {
+        gap: 0.5rem;
+    }
+}
+
 @media (min-width: 640px) {
     .nav-container {
         padding: 0 1.5rem;

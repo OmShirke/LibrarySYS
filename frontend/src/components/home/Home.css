@@ -1,3 +1,4 @@
+
 .home-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -54,7 +55,6 @@
   margin: 20px 0;
 }
 
-/* Updated styles for grid layout instead of table */
 .books-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -107,7 +107,6 @@
   gap: 10px;
 }
 
-/* original table styles for backward compatibility */
 .books-table {
   width: 100%;
   border-collapse: collapse;
@@ -282,7 +281,6 @@
   background-color: #545b62;
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
   .books-grid {
     grid-template-columns: 1fr;

@@ -26,7 +26,8 @@ async def connect_to_mongo():
         logger.info(f"Successfully connected to MongoDB at {MONGODB_URL}")
         
         # Create indexes for better performance
-        await create_indexes()
+        await create_book_indexes()
+        await create_user_indexes()
         
     except ConnectionFailure as e:
         logger.error(f"Failed to connect to MongoDB: {e}")
@@ -35,8 +36,7 @@ async def connect_to_mongo():
         logger.error(f"Unexpected error connecting to MongoDB: {e}")
         raise e
 
-async def create_indexes():
-    """Create database indexes for better performance"""
+async def create_book_indexes():
     try:
         books_collection = get_collection("books")
         
@@ -52,6 +52,17 @@ async def create_indexes():
     except Exception as e:
         logger.warning(f"Failed to create indexes: {e}")
 
+async def create_user_indexes():
+    try:
+        user_collection=get_collection("user")
+        
+        await user_collection.create_index("username", unique=True)
+        await user_collection.create_index("email_address", unique=True)
+        await user_collection.create_index("password")
+        logger.info("user indexes created sucessfully")
+    except Exception as e:
+        logger.warning(f"failed to create indexes:{e}")
+        
 def get_database():
     """Get database instance"""
     if DatabaseConnection.database is None:

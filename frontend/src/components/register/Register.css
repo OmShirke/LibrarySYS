@@ -1,0 +1,146 @@
+/* Register Container */
+.register-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb;
+  padding: 3rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .register-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .register-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Register Box */
+.register-box {
+  max-width: 28rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Header */
+.register-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: #111827;
+  text-align: center;
+}
+
+.register-subtext {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* Link Button */
+.register-switch-btn {
+  font-weight: 500;
+  color: #4f46e5;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: all 0.15s ease-in-out;
+}
+
+.register-switch-btn:hover {
+  color: #3730a3;
+  text-decoration-color: currentColor;
+}
+
+.register-switch-btn:focus {
+  outline: none;
+  text-decoration-color: currentColor;
+}
+
+/* Form Fields */
+.register-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  color: #111827;
+  font-size: 0.875rem;
+  background-color: white;
+  border-radius: 0.375rem;
+  margin-top: 0.25rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.register-input::placeholder {
+  color: #6b7280;
+}
+
+.register-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+}
+
+/* Label */
+.register-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* Error Message */
+.register-error {
+  background-color: #fef2f2;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #dc2626;
+}
+
+/* Submit Button */
+.register-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: #4f46e5;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.register-button:hover:not(:disabled) {
+  background-color: #3730a3;
+}
+
+.register-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
